@@ -1,0 +1,8 @@
+---
+features:
+  - |
+    Add options to avoid some kind of payload from being sent to Datadog
+    For some user, basic information gathered by a check can be too sensitive
+    to be sent to Datadog (ex: IP addresses in events or service_check). We
+    now have options to blacklist any kind of payload from being sent to the
+    backend.
