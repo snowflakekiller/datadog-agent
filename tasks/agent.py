@@ -13,7 +13,7 @@ import invoke
 from invoke import task
 from invoke.exceptions import Exit
 
-from .utils import bin_name, get_build_flags, get_version_numeric_only, load_release_versions, get_version, is_nightly
+from .utils import bin_name, get_build_flags, get_version_numeric_only, load_release_versions, get_version
 from .utils import REPO_PATH
 from .build_tags import get_build_tags, get_default_build_tags, LINUX_ONLY_TAGS, DEBIAN_ONLY_TAGS
 from .go import deps
@@ -216,7 +216,7 @@ def integration_tests(ctx, install_deps=False, race=False, remote_docker=False):
 
 @task(help={'skip-sign': "On macOS, use this option to build an unsigned package if you don't have Datadog's developer keys."})
 def omnibus_build(ctx, puppy=False, log_level="info", base_dir=None, gem_path=None,
-                  skip_deps=False, skip_sign=False, release_target=None, omnibus_s3_cache=False):
+                  skip_deps=False, skip_sign=False, release_target="nightly", omnibus_s3_cache=False):
     """
     Build the Agent packages with Omnibus Installer.
     """
@@ -235,13 +235,15 @@ def omnibus_build(ctx, puppy=False, log_level="info", base_dir=None, gem_path=No
     if overrides:
         overrides_cmd = "--override=" + " ".join(overrides)
 
-    nightly_build = is_nightly(ctx)
-    agent_version = get_version(ctx, include_git=True, nightly_build=nightly_build)
     with ctx.cd("omnibus"):
-        env = load_release_versions(ctx, release_target or agent_version, nightly_build=nightly_build)
-        # We set the "build_version" for omnibus.
-        env["AGENT_VERSION"] = agent_version
+        agent_version = get_version(ctx, include_git=True, url_safe=True, nightly_build=(release_target=="nightly"))
 
+        env = load_release_versions(ctx, release_target)
+        print(env)
+        env["AGENT_VERSION"] = agent_version
+        print("agent_version " + agent_version)
+        print("release_target " + release_target)
+        return
         cmd = "bundle install"
         if gem_path:
             cmd += " --path {}".format(gem_path)

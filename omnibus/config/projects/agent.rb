@@ -21,7 +21,7 @@ else
   maintainer 'Datadog Packages <package@datadoghq.com>'
 end
 
-build_version ENV["AGENT_VERSION"]
+build_version ENV["AGENT_VERSION"].gsub('+', '.')
 
 build_iteration 1
 

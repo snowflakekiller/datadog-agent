@@ -211,25 +211,7 @@ def get_version_numeric_only(ctx):
     version, _, _, _ = query_version(ctx)
     return version
 
-def is_nightly(ctx):
-    """
-    If the build was trigger by a tag being pushed and that tag exists in the
-    release.json: this means we're not building a nightly.
-    """
-
-    # CI_COMMIT_TAG contains the new tag being pushed
-    tagged_version = os.environ.get("CI_COMMIT_TAG")
-    if not tagged_version:
-        return True
-
-    with open("release.json", "r") as f:
-        versions = json.load(f)
-        return not tagged_version in versions
-
-def load_release_versions(ctx, target_version, nightly_build=True):
-    if nightly_build:
-        target_version = "nightly"
-
+def load_release_versions(ctx, target_version):
     with open("release.json", "r") as f:
         versions = json.load(f)
 

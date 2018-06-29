@@ -209,7 +209,6 @@ agent_deb-x64:
     # pointing to a gitlab-friendly location.
     - inv -e agent.omnibus-build --release-target "$RELEASE_VERSION" --base-dir $OMNIBUS_BASE_DIR --omnibus-s3-cache
     - dpkg -c $OMNIBUS_PACKAGE_DIR/datadog-agent*_amd64.deb
-    - $S3_CP_CMD $OMNIBUS_PACKAGE_DIR/datadog-agent*_amd64.deb $S3_ARTEFACTS_URI/datadog-agent_amd64.deb
   # TODO: enabling the cache cause builds to be slower and slower on `master`. Re-enable once this is investigated/fixed
   # cache:
   #   # cache per branch
