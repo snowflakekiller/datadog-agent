@@ -85,6 +85,9 @@ func StartServer() error {
 	if err != nil {
 		return err
 	}
+
+	custommetrics.DefaultMetricsIntake.Start()
+
 	stopCh = make(chan struct{})
 	return server.GenericAPIServer.PrepareRun().Run(stopCh)
 }
@@ -95,4 +98,5 @@ func StopServer() {
 	if stopCh != nil {
 		stopCh <- struct{}{}
 	}
+	custommetrics.DefaultMetricsIntake.Stop()
 }

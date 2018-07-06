@@ -40,6 +40,12 @@ func TestValidateTokenMiddleware(t *testing.T) {
 			"imposter",
 			http.StatusForbidden,
 		},
+		// HACK(devonboyer): Skip validation for /api/v2 endpoints that use an api_key for validation.
+		{
+			"/api/v2",
+			"abc123",
+			http.StatusOK,
+		},
 	}
 
 	for i, tt := range tests {
