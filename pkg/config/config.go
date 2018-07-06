@@ -471,7 +471,7 @@ func getMultipleEndpoints(config *viper.Viper) (map[string][]string, error) {
 		},
 	}
 
-	var additionalEndpoints map[string][]string
+	additionalEndpoints := make(map[string][]string)
 	err = config.UnmarshalKey("additional_endpoints", &additionalEndpoints)
 	if err != nil {
 		return keysPerDomain, err

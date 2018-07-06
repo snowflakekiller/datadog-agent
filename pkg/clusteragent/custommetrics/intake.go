@@ -13,8 +13,12 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
+type payload struct {
+	Series []metrics.Serie `json:"series"`
+}
+
 const (
-	seriesChannelSize = 256
+	seriesChannelSize = 1024
 )
 
 // DefaultMetricsIntake ...
@@ -57,26 +61,30 @@ func (m *MetricsIntake) start() {
 			}
 			log.Tracef("Processing serie: %v", serie)
 
+			// Is this a metric we care about?
+			// read keys of configmap
+
 			// metric := CustomMetricValue{
 			// 	MetricName: serie.Name,
 			// 	Timestamp:  serie.Points[0].Ts,
 			// 	Value:      serie.Points[0].Value,
 			// }
-			// 1. Read from store and update value
-			// 2.
+
+			// I only care about some metrics...
 		}
 	}
 }
 
 // Send ...
 func (m *MetricsIntake) Send(b []byte) error {
-	var payload string
+	var payload payload
 	if err := json.Unmarshal(b, &payload); err != nil {
 		return err
 	}
-	log.Tracef("Processing payload: %s", payload)
-	// var serie metrics.Serie
-	// m.seriesCh <- serie
+	log.Tracef("Processing payload with %d series: %s", len(payload.Series))
+	for _, serie := range payload.Series {
+		m.seriesCh <- serie
+	}
 	return nil
 }
 
