@@ -17,10 +17,10 @@ const (
 	seriesChannelSize = 256
 )
 
-// DefaultMetricsIntake
+// DefaultMetricsIntake ...
 var DefaultMetricsIntake = NewMetricsIntake()
 
-// MetricsIntake
+// MetricsIntake ...
 type MetricsIntake struct {
 	seriesCh chan metrics.Serie
 
@@ -28,7 +28,7 @@ type MetricsIntake struct {
 	wg     sync.WaitGroup
 }
 
-// NewMetricsIntake
+// NewMetricsIntake ...
 func NewMetricsIntake() *MetricsIntake {
 	return &MetricsIntake{
 		seriesCh: make(chan metrics.Serie, seriesChannelSize),
@@ -36,7 +36,7 @@ func NewMetricsIntake() *MetricsIntake {
 	}
 }
 
-// Start
+// Start ...
 func (m *MetricsIntake) Start() {
 	log.Info("Starting metrics intake process...")
 	m.wg.Add(1)
@@ -68,7 +68,7 @@ func (m *MetricsIntake) start() {
 	}
 }
 
-// Send
+// Send ...
 func (m *MetricsIntake) Send(b []byte) error {
 	var payload string
 	if err := json.Unmarshal(b, &payload); err != nil {
@@ -80,7 +80,7 @@ func (m *MetricsIntake) Send(b []byte) error {
 	return nil
 }
 
-// Stop
+// Stop ....
 func (m *MetricsIntake) Stop() {
 	close(m.stopCh)
 	m.wg.Wait()

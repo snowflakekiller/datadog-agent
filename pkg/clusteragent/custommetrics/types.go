@@ -1,6 +1,6 @@
 package custommetrics
 
-// CustomMetricValue
+// CustomMetricValue ...
 type CustomMetricValue struct {
 	DescribedObject ObjectReference `json:"describedObject"`
 	MetricName      string          `json:"metricName"`
@@ -8,7 +8,7 @@ type CustomMetricValue struct {
 	Value           float64         `json:"value"`
 }
 
-// ObjectReference
+// ObjectReference ...
 type ObjectReference struct {
 	Kind       string `json:"kind"`
 	Name       string `json:"name"`

@@ -26,6 +26,8 @@ func Install(r *mux.Router) {
 func seriesHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
+	log.Tracef("Triggered series handler")
+
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Errorf("Could not ready body")
