@@ -38,7 +38,7 @@ type Scanner struct {
 	// TODO: we might have two file scanners, we should redefine the responsibility of this class.
 	// IMO, this class only exists to create or remove log sources.
 	fileScanner        *file.Scanner
-	watcher            Watcher
+	podProvider        *PodProvider
 	sources            *config.LogSources
 	sourcesByContainer map[string]*config.LogSource
 	stopped            chan struct{}
@@ -46,8 +46,8 @@ type Scanner struct {
 
 // NewScanner returns a new scanner.
 func NewScanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
-	// initialize a pods watcher to handle added and removed pods.
-	watcher, err := NewWatcher(KubeletPolling) // TODO: drive the strategy by a configuration parameter.
+	// initialize a pod provider to handle added and removed pods.
+	podProvider, err := NewPodProvider(KubeletPolling) // TODO: drive the strategy by a configuration parameter.
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func NewScanner(sources *config.LogSources, pp pipeline.Provider, auditor *audit
 	fileScanner := file.New(sources, tailerMaxOpenFiles, pp, auditor, tailerSleepPeriod)
 	return &Scanner{
 		fileScanner:        fileScanner,
-		watcher:            watcher,
+		podProvider:        podProvider,
 		sources:            sources,
 		sourcesByContainer: make(map[string]*config.LogSource),
 		stopped:            make(chan struct{}),
@@ -72,13 +72,13 @@ func (s *Scanner) Start() {
 	log.Info("Starting Kubernetes scanner")
 	s.fileScanner.Start()
 	go s.run()
-	s.watcher.Start()
+	s.podProvider.Start()
 }
 
 // Stop stops the scanner
 func (s *Scanner) Stop() {
 	log.Info("Stopping Kubernetes scanner")
-	s.watcher.Stop()
+	s.podProvider.Stop()
 	s.stopped <- struct{}{}
 	s.fileScanner.Stop()
 }
@@ -87,10 +87,10 @@ func (s *Scanner) Stop() {
 func (s *Scanner) run() {
 	for {
 		select {
-		case pod := <-s.watcher.Added():
+		case pod := <-s.podProvider.Added:
 			log.Infof("adding pod: %v", pod.Metadata.Name)
 			s.addSources(pod)
-		case pod := <-s.watcher.Removed():
+		case pod := <-s.podProvider.Removed:
 			log.Infof("removing pod %v", pod.Metadata.Name)
 			s.removeSources(pod)
 		case <-s.stopped:
