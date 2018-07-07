@@ -36,8 +36,8 @@ const (
 	podsDirectoryPath = "/var/log/pods"
 )
 
-// KubeScanner looks for new and deleted pods to start or stop one file tailer per container.
-type KubeScanner struct {
+// Scanner looks for new and deleted pods to start or stop one file tailer per container.
+type Scanner struct {
 	// TODO: we might have two file scanners, we should redefine the responsability of this class.
 	// IMO, this class only exists to create or remove log sources.
 	fileScanner        *file.Scanner
@@ -47,8 +47,8 @@ type KubeScanner struct {
 	stopped            chan struct{}
 }
 
-// NewKubeScanner returns a new scanner.
-func NewKubeScanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*KubeScanner, error) {
+// Scanner returns a new scanner.
+func Scanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
 	// initialize a pods watcher to handle added and removed pods.
 	watcher, err := NewWatcher(Inotify) // TODO: drive the strategy by a configuration parameter.
 	if err != nil {
@@ -61,7 +61,7 @@ func NewKubeScanner(sources *config.LogSources, pp pipeline.Provider, auditor *a
 	}
 	// initialize a file scanner to collect logs from container files.
 	fileScanner := file.New(sources, tailerMaxOpenFiles, pp, auditor, tailerSleepPeriod)
-	return &KubeScanner{
+	return &Scanner{
 		fileScanner:        fileScanner,
 		watcher:            watcher,
 		sources:            sources,
@@ -71,7 +71,7 @@ func NewKubeScanner(sources *config.LogSources, pp pipeline.Provider, auditor *a
 }
 
 // Start starts the scanner
-func (s *KubeScanner) Start() {
+func (s *Scanner) Start() {
 	log.Info("Starting Kubernetes scanner")
 	s.fileScanner.Start()
 	go s.run()
@@ -79,7 +79,7 @@ func (s *KubeScanner) Start() {
 }
 
 // Stop stops the scanner
-func (s *KubeScanner) Stop() {
+func (s *Scanner) Stop() {
 	log.Info("Stopping Kubernetes scanner")
 	s.watcher.Stop()
 	s.stopped <- struct{}{}
@@ -87,7 +87,7 @@ func (s *KubeScanner) Stop() {
 }
 
 // run handles new and removed pods
-func (s *KubeScanner) run() {
+func (s *Scanner) run() {
 	for {
 		select {
 		case added := <-s.watcher.Added():
@@ -103,7 +103,7 @@ func (s *KubeScanner) run() {
 }
 
 // addSources creates a new log source for each container of a new pod.
-func (s *KubeScanner) addSources(pod *kubelet.Pod) {
+func (s *Scanner) addSources(pod *kubelet.Pod) {
 	for _, container := range pod.Status.Containers {
 		containerID := container.ID
 		if _, exists := s.sourcesByContainer[containerID]; exists {
@@ -116,7 +116,7 @@ func (s *KubeScanner) addSources(pod *kubelet.Pod) {
 }
 
 // removeSources removes all log sources for all the containers in pod.
-func (s *KubeScanner) removeSources(pod *kubelet.Pod) {
+func (s *Scanner) removeSources(pod *kubelet.Pod) {
 	for _, container := range pod.Status.Containers {
 		containerID := container.ID
 		if source, exists := s.sourcesByContainer[containerID]; exists {
@@ -130,7 +130,7 @@ func (s *KubeScanner) removeSources(pod *kubelet.Pod) {
 const kubernetesIntegration = "kubernetes"
 
 // getSource returns a new source for the container in pod
-func (s *KubeScanner) getSource(pod *kubelet.Pod, container kubelet.ContainerStatus) *config.LogSource {
+func (s *Scanner) getSource(pod *kubelet.Pod, container kubelet.ContainerStatus) *config.LogSource {
 	return config.NewLogSource(s.getSourceName(pod, container), &config.LogsConfig{
 		Type:    config.FileType,
 		Path:    s.getPath(pod, container),
@@ -141,17 +141,17 @@ func (s *KubeScanner) getSource(pod *kubelet.Pod, container kubelet.ContainerSta
 }
 
 // getSourceName returns the source name of the container to tail.
-func (s *KubeScanner) getSourceName(pod *kubelet.Pod, container kubelet.ContainerStatus) string {
+func (s *Scanner) getSourceName(pod *kubelet.Pod, container kubelet.ContainerStatus) string {
 	return fmt.Sprintf("%s/%s/%s", pod.Metadata.Namespace, pod.Metadata.Name, container.Name)
 }
 
 // getPath returns the path where all the logs of the container of the pod are stored.
-func (s *KubeScanner) getPath(pod *kubelet.Pod, container kubelet.ContainerStatus) string {
+func (s *Scanner) getPath(pod *kubelet.Pod, container kubelet.ContainerStatus) string {
 	return fmt.Sprintf("%s/%s/%s/*.log", podsDirectoryPath, pod.Metadata.UID, container.Name)
 }
 
 // getTags returns all the tags of the container
-func (s *KubeScanner) getTags(container kubelet.ContainerStatus) []string {
+func (s *Scanner) getTags(container kubelet.ContainerStatus) []string {
 	tags, _ := tagger.Tag(container.ID, true)
 	return tags
 }
