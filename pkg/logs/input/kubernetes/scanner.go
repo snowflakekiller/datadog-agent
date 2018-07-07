@@ -46,7 +46,7 @@ type Scanner struct {
 
 // NewScanner returns a new scanner.
 func NewScanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
-	// initialize a pod provider to handle added and removed pods.
+	// initialize a pod provider to handle added and deleted pods.
 	podProvider, err := NewPodProvider(KubeletPolling) // TODO: drive the strategy by a configuration parameter.
 	if err != nil {
 		return nil, err
@@ -83,7 +83,7 @@ func (s *Scanner) Stop() {
 	s.fileScanner.Stop()
 }
 
-// run handles new and removed pods
+// run handles new and deleted pods
 func (s *Scanner) run() {
 	for {
 		select {
