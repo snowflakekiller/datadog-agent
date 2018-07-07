@@ -5,14 +5,11 @@
 
 // +build kubelet
 
-package container
+package kubernetes
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 
 	"github.com/DataDog/datadog-agent/pkg/tagger"
 	"github.com/DataDog/datadog-agent/pkg/util/kubernetes/kubelet"
@@ -38,7 +35,7 @@ const (
 
 // Scanner looks for new and deleted pods to start or stop one file tailer per container.
 type Scanner struct {
-	// TODO: we might have two file scanners, we should redefine the responsability of this class.
+	// TODO: we might have two file scanners, we should redefine the responsibility of this class.
 	// IMO, this class only exists to create or remove log sources.
 	fileScanner        *file.Scanner
 	watcher            Watcher
@@ -47,10 +44,10 @@ type Scanner struct {
 	stopped            chan struct{}
 }
 
-// Scanner returns a new scanner.
-func Scanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
+// NewScanner returns a new scanner.
+func NewScanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
 	// initialize a pods watcher to handle added and removed pods.
-	watcher, err := NewWatcher(Inotify) // TODO: drive the strategy by a configuration parameter.
+	watcher, err := NewWatcher(KubeletPolling) // TODO: drive the strategy by a configuration parameter.
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +87,10 @@ func (s *Scanner) Stop() {
 func (s *Scanner) run() {
 	for {
 		select {
-		case added := <-s.watcher.Added():
+		case pod := <-s.watcher.Added():
 			log.Infof("adding pod: %v", pod.Metadata.Name)
 			s.addSources(pod)
-		case removed := <-s.watcher.Removed():
+		case pod := <-s.watcher.Removed():
 			log.Infof("removing pod %v", pod.Metadata.Name)
 			s.removeSources(pod)
 		case <-s.stopped:
