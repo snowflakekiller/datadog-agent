@@ -47,7 +47,7 @@ type Scanner struct {
 // NewScanner returns a new scanner.
 func NewScanner(sources *config.LogSources, pp pipeline.Provider, auditor *auditor.Auditor) (*Scanner, error) {
 	// initialize a pod provider to handle added and deleted pods.
-	podProvider, err := NewPodProvider(KubeletPolling) // TODO: drive the strategy by a configuration parameter.
+	podProvider, err := NewPodProvider(config.LogsAgent.GetBool("logs_config.dev_mode_use_inotify"))
 	if err != nil {
 		return nil, err
 	}
